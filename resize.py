@@ -42,12 +42,14 @@ if len(sys.argv) > 1:
 else:
     print("This program expects a folder that contains images.")
     print("Drag and drop the images folder on this file.")
-    input("\nProgram will close.")
+    print("")
+    input("Program will close.")
     sys.exit()
 
 if drop_input.type != "Folder":
     print("The input item is not a folder.")
-    input("\nProgram will close.")
+    print("")
+    input("Program will close.")
     sys.exit()
 
 #endregion
@@ -63,12 +65,14 @@ if os.path.isdir(target_dir_path):
     delete_choice = input("Do you want to delete it? ([yes], no): ")
     if delete_choice not in ["", "yes", "no"]:
         print("You provided an invalid choice.")
-        print("\nProgram will close.")
+        print("")
+        print("Program will close.")
         input()
         sys.exit()
     if delete_choice == "no":
         print("You chose not to delete the already existing output folder.")
-        print("\nProgram will close.")
+        print("")
+        print("Program will close.")
         input()
         sys.exit()
     shutil.rmtree(target_dir_path)
