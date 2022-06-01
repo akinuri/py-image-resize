@@ -59,6 +59,7 @@ if drop_input.type != "Folder":
 
 target_dir      = drop_input.name + " (resized)"
 target_dir_path = drop_input.get_parent_path().path + drop_input.sep + target_dir
+target_dir_deleted = False
 
 if os.path.isdir(target_dir_path):
     print("The output folder (%s) already exists." % target_dir)
@@ -76,6 +77,7 @@ if os.path.isdir(target_dir_path):
         input()
         sys.exit()
     shutil.rmtree(target_dir_path)
+    target_dir_deleted = True
 
 os.mkdir(target_dir_path)
 
@@ -91,7 +93,8 @@ images           = root_node.get_children(extensions=image_extensions, deep=True
 images_count = str(len(images))
 index_length = len(images_count)
 
-print("")
+if target_dir_deleted:
+    print("")
 print(str(images_count) + " images are found.")
 
 #endregion
@@ -129,6 +132,8 @@ for i, image_node in enumerate(images):
         angle = 0
         if orientation == 6:
             angle = -90
+        if orientation == 8:
+            angle = -270
         if angle != 0:
             img = img.rotate(angle, expand=True)
     
