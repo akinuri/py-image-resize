@@ -53,30 +53,41 @@ if drop_input.type != "Folder":
 #endregion
 
 
-#region ==================== DUPLICATE
+#region ==================== TARGET
 
-duplicate_path = drop_input.get_parent_path().path + drop_input.sep + drop_input.name + " (resized)"
+target_dir      = drop_input.name + " (resized)"
+target_dir_path = drop_input.get_parent_path().path + drop_input.sep + target_dir
 
-# TODO: copy/create only the folder
-# TODO: copy and resize files one by one
-# TODO: what to do if the folder already exists?
+if os.path.isdir(target_dir_path):
+    print("The output folder (%s) already exists." % target_dir)
+    delete_choice = input("Do you want to delete it? ([yes], no): ")
+    if delete_choice not in ["", "yes", "no"]:
+        print("You provided an invalid choice.")
+        print("\nProgram will close.")
+        input()
+        sys.exit()
+    if delete_choice == "no":
+        print("You chose not to delete the already existing output folder.")
+        print("\nProgram will close.")
+        input()
+        sys.exit()
+    shutil.rmtree(target_dir_path)
 
-shutil.copytree(drop_input.path, duplicate_path)
-
-target_path = duplicate_path
+os.mkdir(target_dir_path)
 
 #endregion
 
 
 #region ==================== FIND
 
-root_node        = Node(target_path)
+root_node        = Node(drop_input.path)
 image_extensions = ["jpg", "jpeg", "bmp", "png", "tif"]
 images           = root_node.get_children(extensions=image_extensions, deep=True)
 
 images_count = str(len(images))
 index_length = len(images_count)
 
+print("")
 print(str(images_count) + " images are found.")
 
 #endregion
@@ -88,6 +99,12 @@ size = (1920*4, 1920*4)
 quality = 80 # 1-95, def=75
 
 for i, image_node in enumerate(images):
+    
+    img_path = Path(image_node.path)
+    target_img_path = image_node.path.replace(
+        str_wrap(drop_input.name, img_path.sep),
+        str_wrap(target_dir, img_path.sep),
+    )
     
     if image_node.extension != "jpg":
         new_path = image_node.parent.path + "\\" + image_node.name + ".jpg"
@@ -129,14 +146,14 @@ for i, image_node in enumerate(images):
     
     img.thumbnail(size, Image.Resampling.LANCZOS)
     
-    img.save(image_node.path, quality=quality)
+    img.save(target_img_path, quality=quality)
     
     print(
         "(%s/%s) %s"
         % (
             str_pad_left(i+1, index_length, "0"),
             images_count,
-            image_node.path
+            target_img_path
         )
     )
 
@@ -158,5 +175,6 @@ print(
 #endregion
 
 
-print("\nProgram will close.")
+print("")
+print("Program will close.")
 input()
