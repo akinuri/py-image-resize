@@ -1,3 +1,5 @@
+#region ==================== IMPORT
+
 import os, sys
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -13,16 +15,22 @@ import shutil
 from PIL import Image
 from PIL import ImageCms
 from PIL.ExifTags import TAGS
-Image.MAX_IMAGE_PIXELS = None
 
 from pprint import pprint
 
 import math
 import time
 
-sw_start = time.time()
+#endregion
+
+
+#region ==================== SETUP
 
 os.system("title " + "Resizing Images")
+Image.MAX_IMAGE_PIXELS = None
+sw_start = time.time()
+
+#endregion
 
 
 #region ==================== INPUT
@@ -93,17 +101,15 @@ for i, image_node in enumerate(images):
     for tag_id in exif:
         tag = TAGS.get(tag_id, tag_id)
         if tag == "Orientation":
-            data = exif.get(tag_id)
-            if isinstance(data, bytes):
-                data = data.decode()
-            orientation = data
+            orientation = exif.get(tag_id)
     
     # http://sylvana.net/jpegcrop/exif_orientation.html
     if orientation != None:
         angle = 0
         if orientation == 6:
             angle = -90
-        img = img.rotate(angle, expand=True)
+        if angle != 0:
+            img = img.rotate(angle, expand=True)
     
     if img.mode == "CMYK":
         img = ImageCms.profileToProfile(
@@ -125,7 +131,14 @@ for i, image_node in enumerate(images):
     
     img.save(image_node.path, quality=quality)
     
-    print("("+ str_pad_left(i+1, index_length, "0") + "/" + images_count + ") " + image_node.path)
+    print(
+        "(%s/%s) %s"
+        % (
+            str_pad_left(i+1, index_length, "0"),
+            images_count,
+            image_node.path
+        )
+    )
 
 #endregion
 
@@ -145,4 +158,5 @@ print(
 #endregion
 
 
-input("\nProgram will close.")
+print("\nProgram will close.")
+input()
