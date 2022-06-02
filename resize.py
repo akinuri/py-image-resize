@@ -113,10 +113,10 @@ for i, image_node in enumerate(images):
         str_wrap(target_dir, img_path.sep),
     )
     
-    if image_node.extension != "jpg":
-        new_path = image_node.parent.path + "\\" + image_node.name + ".jpg"
-        os.rename(image_node.path, new_path)
-        image_node.path = new_path
+    # if image_node.extension != "jpg":
+    #     new_path = image_node.parent.path + "\\" + image_node.name + ".jpg"
+    #     os.rename(image_node.path, new_path)
+    #     image_node.path = new_path
     
     img = Image.open(image_node.path)
     
