@@ -20,13 +20,14 @@ from pprint import pprint
 
 import math
 import time
+import re
 
 #endregion
 
 
 #region ==================== SETUP
 
-os.system("title " + "Resizing Images")
+os.system("title %s" % "Resizing Images")
 Image.MAX_IMAGE_PIXELS = None
 sw_start = time.time()
 
@@ -52,17 +53,60 @@ if drop_input.type != "Folder":
     input("Program will close.")
     sys.exit()
 
+default_image_size = 5000
+default_image_quality = 75
+
+print("Dimensions of the images will be limited to a specific area, a square.")
+input_image_size = input("Enter a size in pixels (the default is %s): " % default_image_size)
+
+if input_image_size == "":
+    input_image_size = str(default_image_size)
+
+RE_INT = re.compile(r'^([1-9]\d*|0)$')
+if re.match(RE_INT, input_image_size) is None:
+    print("Invalid value. Enter an integer in the range of 1000-10000")
+    print("")
+    input("Program will close.")
+    sys.exit()
+
+input_image_size = int(input_image_size)
+
+if (1000 <= input_image_size <= 10000) is False:
+    print("Invalid range. Integer needs to be in the range of 1000-10000")
+    print("")
+    input("Program will close.")
+    sys.exit()
+
+input_image_quality = input("Enter a quality (10-95, the default is %s): " % default_image_quality)
+
+if input_image_quality == "":
+    input_image_quality = str(default_image_quality)
+
+if re.match(RE_INT, input_image_quality) is None:
+    print("Invalid value. Enter an integer in the range of 10-95")
+    print("")
+    input("Program will close.")
+    sys.exit()
+
+input_image_quality = int(input_image_quality)
+
+if (10 <= input_image_quality <= 95) is False:
+    print("Invalid range. Integer needs to be in the range of 10-95")
+    print("")
+    input("Program will close.")
+    sys.exit()
+
 #endregion
 
 
 #region ==================== TARGET
 
-target_dir      = drop_input.name + " (resized)"
+target_dir      = drop_input.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
 target_dir_path = drop_input.get_parent_path().path + drop_input.sep + target_dir
 target_dir_deleted = False
 
 if os.path.isdir(target_dir_path):
-    print("The output folder (%s) already exists." % target_dir)
+    print("The output folder \"%s\" already exists." % target_dir)
     delete_choice = input("Do you want to delete it? ([yes], no): ")
     if delete_choice not in ["", "yes", "no"]:
         print("You provided an invalid choice.")
@@ -102,8 +146,8 @@ print(str(images_count) + " images are found.")
 
 #region ==================== RESIZE
 
-size = (1920*4, 1920*4)
-quality = 80 # 1-95, def=75
+size = (input_image_size, input_image_size)
+quality = input_image_quality
 
 for i, image_node in enumerate(images):
     
