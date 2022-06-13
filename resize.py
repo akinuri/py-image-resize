@@ -53,34 +53,36 @@ if drop_input.type != "Folder":
     input("Program will close.")
     sys.exit()
 
-default_image_size = 5000
-default_image_quality = 75
+DEFAULT_IMAGE_SIZE = 5000
+DEFAULT_IMAGE_QUALITY = 75
+MIN_IMAGE_SIZE = 768
+MAX_IMAGE_SIZE = 12800
 
 print("Dimensions of the images will be limited to a specific area, a square.")
-input_image_size = input("Enter a size in pixels (the default is %s): " % default_image_size)
+input_image_size = input("Enter a size in pixels (%d-%d, the default is %s): " % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE, DEFAULT_IMAGE_SIZE))
 
 if input_image_size == "":
-    input_image_size = str(default_image_size)
+    input_image_size = str(DEFAULT_IMAGE_SIZE)
 
 RE_INT = re.compile(r'^([1-9]\d*|0)$')
 if re.match(RE_INT, input_image_size) is None:
-    print("Invalid value. Enter an integer in the range of 1000-10000")
+    print("Invalid value. Enter an integer in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
     print("")
     input("Program will close.")
     sys.exit()
 
 input_image_size = int(input_image_size)
 
-if (1000 <= input_image_size <= 10000) is False:
-    print("Invalid range. Integer needs to be in the range of 1000-10000")
+if (MIN_IMAGE_SIZE <= input_image_size <= MAX_IMAGE_SIZE) is False:
+    print("Invalid range. Integer needs to be in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
     print("")
     input("Program will close.")
     sys.exit()
 
-input_image_quality = input("Enter a quality (10-95, the default is %s): " % default_image_quality)
+input_image_quality = input("Enter a quality (10-95, the default is %s): " % DEFAULT_IMAGE_QUALITY)
 
 if input_image_quality == "":
-    input_image_quality = str(default_image_quality)
+    input_image_quality = str(DEFAULT_IMAGE_QUALITY)
 
 if re.match(RE_INT, input_image_quality) is None:
     print("Invalid value. Enter an integer in the range of 10-95")
