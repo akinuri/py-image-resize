@@ -98,6 +98,19 @@ if (10 <= input_image_quality <= 95) is False:
     input("Program will close.")
     sys.exit()
 
+input_convert_jpeg = None
+ALLOWED_CONVERT_JPEG_ANSWERS = ["", "y", "yes", "n", "no"]
+
+input_convert_jpeg = input("Do you want to convert to jpeg, if it's not already so? (the default is no): ")
+
+if input_convert_jpeg.lower() not in ALLOWED_CONVERT_JPEG_ANSWERS:
+    print("Invalid value. Enter yes or no.")
+    print("")
+    input("Program will close.")
+    sys.exit()
+
+input_convert_jpeg = True if input_convert_jpeg.lower() in ["y", "yes"] else False
+
 #endregion
 
 
@@ -154,15 +167,17 @@ quality = input_image_quality
 for i, image_node in enumerate(images):
     
     img_path = Path(image_node.path)
-    target_img_path = image_node.path.replace(
-        str_wrap(drop_input.name, img_path.sep),
-        str_wrap(target_dir, img_path.sep),
+    target_img_path = Path(
+        image_node.path.replace(
+            str_wrap(drop_input.name, img_path.sep),
+            str_wrap(target_dir, img_path.sep),
+        )
     )
     
-    # if image_node.extension != "jpg":
-    #     new_path = image_node.parent.path + "\\" + image_node.name + ".jpg"
-    #     os.rename(image_node.path, new_path)
-    #     image_node.path = new_path
+    if input_convert_jpeg:
+        target_img_path = target_img_path.get_parent_path().path + "\\" + target_img_path.name + ".jpg"
+    else:
+        target_img_path = target_img_path.path
     
     img = Image.open(image_node.path)
     
@@ -190,7 +205,7 @@ for i, image_node in enumerate(images):
             cwd + "\\_modules\\Color_Profiles\\sRGB_Color_Space_Profile.icm",
             outputMode="RGB"
         )
-        
+    
     elif img.mode == "RGBA":
         img_new = Image.new('RGB', img.size, (255, 255, 255))
         img_new.paste(img, (0,0), mask=img)
@@ -201,7 +216,10 @@ for i, image_node in enumerate(images):
     
     img.thumbnail(size, Image.Resampling.LANCZOS)
     
-    img.save(target_img_path, quality=quality)
+    pil_format = None
+    if input_convert_jpeg:
+        pil_format = "JPEG"
+    img.save(target_img_path, format=pil_format, quality=quality)
     
     print(
         "(%s/%s) %s"
