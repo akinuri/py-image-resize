@@ -10,7 +10,7 @@ Dependencies:
 
 class Path():
     
-    def __init__(self, path=None):
+    def __init__(self, path=None, type=None):
         self.name   = ""
         self.path   = ""
         self.type   = ""
@@ -19,9 +19,9 @@ class Path():
         # self.sep = None
         if path is not None:
             self.path = path
-            self.parse(path)
+            self.parse(path, type)
         
-    def parse(self, path):
+    def parse(self, path, type=None):
         
         dirs = []
         
@@ -35,12 +35,12 @@ class Path():
         if "\\" in path or "/" in path:
             self.name = dirs[-1]
         
-        if os.path.isdir(path):
+        if os.path.isdir(path) or type == "Folder":
             self.type = "Folder"
             if hasattr(self, "sep") is False:
                 self.sep = ""
             
-        elif os.path.isfile(path):
+        elif os.path.isfile(path) or type == "File":
             
             self.type = "File"
             
