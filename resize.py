@@ -22,6 +22,8 @@ import math
 import time
 import re
 
+import pathlib
+
 #endregion
 
 
@@ -171,8 +173,11 @@ for i, image_node in enumerate(images):
         image_node.path.replace(
             str_wrap(drop_input.name, img_path.sep),
             str_wrap(target_dir, img_path.sep),
-        )
+        ),
+        "File",
     )
+    
+    pathlib.Path(target_img_path.get_parent_path().path).mkdir(parents=True, exist_ok=True)
     
     if input_convert_jpeg:
         target_img_path = target_img_path.get_parent_path().path + "\\" + target_img_path.name + ".jpg"
