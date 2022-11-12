@@ -1,4 +1,5 @@
 import os
+from string_helpers import *
 
 """
 Dependencies:
@@ -20,7 +21,7 @@ class Path():
         if path is not None:
             self.path = path
             self.parse(path, type)
-        
+    
     def parse(self, path, type=None):
         
         dirs = []
