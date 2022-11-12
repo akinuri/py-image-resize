@@ -29,31 +29,26 @@ import pathlib
 
 #region ==================== SETUP
 
-os.system("title %s" % "Resizing Images")
+os.system("title %s" % "Image Resizer")
 Image.MAX_IMAGE_PIXELS = None
 sw_start = time.time()
 
 #endregion
 
 
-#region ==================== INPUT
+#region ==================== INPUTS
 
-drop_input = None
+drop_inputs = []
 
-if len(sys.argv) > 1:
-    drop_input = Path(sys.argv[1])
-else:
-    print("This program expects a folder that contains images.")
-    print("Drag and drop the images folder on this file.")
+if len(sys.argv) == 0:
+    print("This program expects an image file or a folder that contains images.")
+    print("Drag and drop images and/or a folder of images on this file.")
     print("")
     input("Program will close.")
     sys.exit()
 
-if drop_input.type != "Folder":
-    print("The input item is not a folder.")
-    print("")
-    input("Program will close.")
-    sys.exit()
+for arg in sys.argv[1:]:
+    drop_inputs.append(Path(arg))
 
 DEFAULT_IMAGE_SIZE = 5000
 DEFAULT_IMAGE_QUALITY = 75
@@ -61,7 +56,7 @@ MIN_IMAGE_SIZE = 768
 MAX_IMAGE_SIZE = 12800
 
 print("Dimensions of the images will be limited to a specific area, a square.")
-input_image_size = input("Enter a size in pixels (%d-%d, the default is %s): " % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE, DEFAULT_IMAGE_SIZE))
+input_image_size = input("Enter a size in pixels (%d-%d, [%s]): " % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE, DEFAULT_IMAGE_SIZE))
 
 if input_image_size == "":
     input_image_size = str(DEFAULT_IMAGE_SIZE)
@@ -81,7 +76,7 @@ if (MIN_IMAGE_SIZE <= input_image_size <= MAX_IMAGE_SIZE) is False:
     input("Program will close.")
     sys.exit()
 
-input_image_quality = input("Enter a quality (10-95, the default is %s): " % DEFAULT_IMAGE_QUALITY)
+input_image_quality = input("Enter a quality (10-95, [%s]): " % DEFAULT_IMAGE_QUALITY)
 
 if input_image_quality == "":
     input_image_quality = str(DEFAULT_IMAGE_QUALITY)
@@ -103,7 +98,7 @@ if (10 <= input_image_quality <= 95) is False:
 input_convert_jpeg = None
 ALLOWED_CONVERT_JPEG_ANSWERS = ["", "y", "yes", "n", "no"]
 
-input_convert_jpeg = input("Do you want to convert to jpeg, if it's not already so? (the default is no): ")
+input_convert_jpeg = input("Do you want to convert to jpeg, if it's not already so? (yes, [no]): ")
 
 if input_convert_jpeg.lower() not in ALLOWED_CONVERT_JPEG_ANSWERS:
     print("Invalid value. Enter yes or no.")
@@ -116,71 +111,24 @@ input_convert_jpeg = True if input_convert_jpeg.lower() in ["y", "yes"] else Fal
 #endregion
 
 
-#region ==================== TARGET
-
-target_dir      = drop_input.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
-target_dir_path = drop_input.get_parent_path().path + drop_input.sep + target_dir
-target_dir_deleted = False
-
-if os.path.isdir(target_dir_path):
-    print("The output folder \"%s\" already exists." % target_dir)
-    delete_choice = input("Do you want to delete it? ([yes], no): ")
-    if delete_choice not in ["", "yes", "no"]:
-        print("You provided an invalid choice.")
-        print("")
-        print("Program will close.")
-        input()
-        sys.exit()
-    if delete_choice == "no":
-        print("You chose not to delete the already existing output folder.")
-        print("")
-        print("Program will close.")
-        input()
-        sys.exit()
-    shutil.rmtree(target_dir_path)
-    target_dir_deleted = True
-
-os.mkdir(target_dir_path)
-
-#endregion
-
-
-#region ==================== FIND
-
-root_node        = Node(drop_input.path)
-image_extensions = ["jpg", "jpeg", "bmp", "png", "tif"]
-images           = root_node.get_children(extensions=image_extensions, deep=True)
-
-images_count = str(len(images))
-index_length = len(images_count)
-
-if target_dir_deleted:
-    print("")
-print(str(images_count) + " images are found.")
-
-#endregion
-
-
 #region ==================== RESIZE
 
-size = (input_image_size, input_image_size)
-quality = input_image_quality
+allowed_img_extensions = ["jpg", "jpeg", "bmp", "png", "tif"]
 
-for i, image_node in enumerate(images):
-    
-    img_path = Path(image_node.path)
-    target_img_path = Path(
-        image_node.path.replace(
-            str_wrap(drop_input.name, img_path.sep),
-            str_wrap(target_dir, img_path.sep),
-        ),
-        "File",
-    )
-    
-    pathlib.Path(target_img_path.get_parent_path().path).mkdir(parents=True, exist_ok=True)
+def generate_new_file_name(file):
+    name = file.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
+    path = file.get_parent_path().path + file.sep + name + "." + file.extension
+    return name, path
+
+def generate_new_folder_name(folder):
+    name = folder.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
+    path = folder.get_parent_path().path + folder.sep + name
+    return name, path
+
+def resize_image(image_node, target_img_path):
     
     if input_convert_jpeg:
-        target_img_path = target_img_path.get_parent_path().path + "\\" + target_img_path.name + ".jpg"
+        target_img_path = target_img_path.get_parent_path().path + target_img_path.sep + target_img_path.name + ".jpg"
     else:
         target_img_path = target_img_path.path
     
@@ -219,21 +167,109 @@ for i, image_node in enumerate(images):
     else:
         img = img.convert("RGB")
     
-    img.thumbnail(size, Image.Resampling.LANCZOS)
+    img.thumbnail((input_image_size, input_image_size), Image.Resampling.LANCZOS)
     
     pil_format = None
     if input_convert_jpeg:
         pil_format = "JPEG"
-    img.save(target_img_path, format=pil_format, quality=quality)
+    img.save(target_img_path, format=pil_format, quality=input_image_quality)
+
+images_count = 0
+for drop_input in drop_inputs:
+    if drop_input.type == "File":
+        if drop_input.extension.lower() not in allowed_img_extensions:
+            continue
+        images_count += 1
+    elif drop_input.type == "Folder":
+        root_node = Node(drop_input.path)
+        images    = root_node.get_children(extensions=allowed_img_extensions, deep=True)
+        images_count += len(images)
+print("")
+print(str(images_count) + " images are found.")
+
+index_length = len(str(images_count))
+index = 0
+
+print("")
+for drop_input in drop_inputs:
     
-    print(
-        "(%s/%s) %s"
-        % (
-            str_pad_left(i+1, index_length, "0"),
-            images_count,
-            target_img_path
+    if drop_input.type == "File":
+        
+        if drop_input.extension.lower() not in allowed_img_extensions:
+            continue
+        
+        new_name, new_path = generate_new_file_name(drop_input)
+        
+        if os.path.isfile(new_path):
+            print("The output file \"%s\" already exists." % new_name)
+            delete_choice = input("Do you want to delete it? ([yes], no): ")
+            if delete_choice not in ["", "yes", "no"]:
+                print("You provided an invalid choice.")
+                print("")
+                print("The file is skipped.")
+                continue
+            if delete_choice == "no":
+                print("You chose not to delete the already existing output file.")
+                print("")
+                print("The file is skipped.")
+                continue
+            os.remove(new_path)
+        
+        resize_image(drop_input, Path(new_path))
+        
+        print(
+            "(%s/%s) %s"
+            % (
+                str_pad_left(index+1, index_length, "0"),
+                images_count,
+                drop_input.path
+            )
         )
-    )
+        
+        index += 1
+        
+    elif drop_input.type == "Folder":
+        
+        new_name, new_path = generate_new_folder_name(drop_input)
+        
+        if os.path.isdir(new_path):
+            print("The output folder \"%s\" already exists." % new_name)
+            delete_choice = input("Do you want to delete it? ([yes], no): ")
+            if delete_choice not in ["", "yes", "no"]:
+                print("You provided an invalid choice.")
+                print("")
+                print("The folder is skipped.")
+                continue
+            if delete_choice == "no":
+                print("You chose not to delete the already existing output folder.")
+                print("")
+                print("The folder is skipped.")
+                continue
+            shutil.rmtree(new_path)
+        
+        root_node = Node(drop_input.path)
+        images = root_node.get_children(extensions=allowed_img_extensions, deep=True)
+        
+        for image_node in images:
+            img_path = Path(image_node.path)
+            target_img_path = Path(
+                image_node.path.replace(
+                    str_wrap(drop_input.name, img_path.sep),
+                    str_wrap(new_name, img_path.sep),
+                ),
+                "File",
+            )
+            pathlib.Path(target_img_path.get_parent_path().path).mkdir(parents=True, exist_ok=True)
+            resize_image(image_node, target_img_path)
+            print(
+                "(%s/%s) %s"
+                % (
+                    str_pad_left(index+1, index_length, "0"),
+                    images_count,
+                    image_node.path
+                )
+            )
+            index += 1
 
 #endregion
 
@@ -242,6 +278,7 @@ for i, image_node in enumerate(images):
 
 sw_end = time.time()
 sw_elapsed = sw_end - sw_start
+print("")
 print(
     "Total elapsed time: %d minutes %d seconds"
     % (
