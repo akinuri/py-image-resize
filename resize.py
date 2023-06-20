@@ -27,11 +27,23 @@ import pathlib
 #endregion
 
 
+#region ==================== APP: EXIT
+
+def app_exit(*messages):
+    for message in messages:
+        print(message)
+        if message != "":
+            print("")
+    input("App will close. ")
+    sys.exit()
+
+#endregion
+
+
 #region ==================== SETUP
 
 os.system("title %s" % "Image Resizer")
 Image.MAX_IMAGE_PIXELS = None
-sw_start = time.time()
 
 #endregion
 
@@ -40,12 +52,11 @@ sw_start = time.time()
 
 drop_inputs = []
 
-if len(sys.argv) == 0:
-    print("This program expects an image file or a folder that contains images.")
-    print("Drag and drop images and/or a folder of images on this file.")
-    print("")
-    input("Program will close.")
-    sys.exit()
+if len(sys.argv) == 1:
+    app_exit(
+        "This app expects an image file or a folder that contains images.",
+        "Drag and drop images and/or a folder of images on this file.",
+    )
 
 for arg in sys.argv[1:]:
     drop_inputs.append(Path(arg))
@@ -56,6 +67,7 @@ MIN_IMAGE_SIZE = 768
 MAX_IMAGE_SIZE = 12800
 
 print("Dimensions of the images will be limited to a specific area, a square.")
+print("")
 input_image_size = input("Enter a size in pixels (%d-%d, [%s]): " % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE, DEFAULT_IMAGE_SIZE))
 
 if input_image_size == "":
@@ -63,57 +75,42 @@ if input_image_size == "":
 
 RE_INT = re.compile(r'^([1-9]\d*|0)$')
 if re.match(RE_INT, input_image_size) is None:
-    print("Invalid value. Enter an integer in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
-    print("")
-    input("Program will close.")
-    sys.exit()
+    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
 
 input_image_size = int(input_image_size)
 
 if (MIN_IMAGE_SIZE <= input_image_size <= MAX_IMAGE_SIZE) is False:
-    print("Invalid range. Integer needs to be in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
-    print("")
-    input("Program will close.")
-    sys.exit()
+    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
 
+print("")
 input_image_quality = input("Enter a quality (10-95, [%s]): " % DEFAULT_IMAGE_QUALITY)
 
 if input_image_quality == "":
     input_image_quality = str(DEFAULT_IMAGE_QUALITY)
 
 if re.match(RE_INT, input_image_quality) is None:
-    print("Invalid value. Enter an integer in the range of 10-95")
-    print("")
-    input("Program will close.")
-    sys.exit()
+    app_exit("", "Invalid value. Enter an integer in the range of 10-95")
 
 input_image_quality = int(input_image_quality)
 
 if (10 <= input_image_quality <= 95) is False:
-    print("Invalid range. Integer needs to be in the range of 10-95")
-    print("")
-    input("Program will close.")
-    sys.exit()
+    app_exit("", "Invalid range. Integer needs to be in the range of 10-95")
 
 input_convert_jpeg = None
-ALLOWED_CONVERT_JPEG_ANSWERS = ["", "y", "yes", "n", "no"]
+ALLOWED_CONVERT_JPEG_ANSWERS = ["y", "yes", "n", "no", ""]
 
-input_convert_jpeg = input("Do you want to convert to jpeg, if it's not already so? (yes, [no]): ")
+print("")
+input_convert_jpeg = input("Do you want to convert to jpeg, if they are not already so? (yes, [no]): ")
 
 if input_convert_jpeg.lower() not in ALLOWED_CONVERT_JPEG_ANSWERS:
-    print("Invalid value. Enter yes or no.")
-    print("")
-    input("Program will close.")
-    sys.exit()
+    app_exit("Invalid value. Enter yes or no.")
 
 input_convert_jpeg = True if input_convert_jpeg.lower() in ["y", "yes"] else False
 
 #endregion
 
 
-#region ==================== RESIZE
-
-allowed_img_extensions = ["jpg", "jpeg", "bmp", "png", "tif"]
+#region ==================== FUNCS
 
 def generate_new_file_name(file):
     name = file.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
@@ -173,6 +170,15 @@ def resize_image(image_node, target_img_path):
     if input_convert_jpeg:
         pil_format = "JPEG"
     img.save(target_img_path, format=pil_format, quality=input_image_quality)
+
+#endregion
+
+
+#region ==================== APP: RESIZE (FIT)
+
+sw_start = time.time()
+
+allowed_img_extensions = ["jpg", "jpeg", "bmp", "png", "tif"]
 
 images_count = 0
 for drop_input in drop_inputs:
@@ -278,8 +284,9 @@ for drop_input in drop_inputs:
 
 sw_end = time.time()
 sw_elapsed = sw_end - sw_start
-print("")
-print(
+
+app_exit(
+    "",
     "Total elapsed time: %d minutes %d seconds"
     % (
         math.floor(sw_elapsed / 60),
@@ -288,8 +295,3 @@ print(
 )
 
 #endregion
-
-
-print("")
-print("Program will close.")
-input()
