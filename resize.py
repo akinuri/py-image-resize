@@ -61,44 +61,43 @@ if len(sys.argv) == 1:
 for arg in sys.argv[1:]:
     drop_inputs.append(Path(arg))
 
-MIN_BOUND_BOX_SIZE       = 100
-MAX_BOUND_BOX_SIZE       = 16000
-DEFAULT_BOUND_BOX_WIDTH  = 2000
-DEFAULT_BOUND_BOX_HEIGHT = 2000
-DEFAULT_IMAGE_QUALITY    = 75
+MIN_BOUND_BOX_SIZE    = 100
+MAX_BOUND_BOX_SIZE    = 16000
+DEFAULT_IMAGE_QUALITY = 75
+
+calc_image_width   = None
+calc_image_height  = None
+calc_image_quality = DEFAULT_IMAGE_QUALITY
 
 print("Dimensions of the images will be limited to a specific area.")
+print("If one side is omitted, it'll be automatically calculated.")
 
 print("")
-input_image_width = input("Enter a width in pixels (%d-%d, [%s]): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE, DEFAULT_BOUND_BOX_WIDTH))
+input_image_width = input("Enter a width in pixels (%d-%d): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
 
-if input_image_width == "":
-    input_image_width = str(DEFAULT_BOUND_BOX_WIDTH)
-
-RE_INT = re.compile(r'^([1-9]\d*|0)$')
-if re.match(RE_INT, input_image_width) is None:
-    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
-
-input_image_width = int(input_image_width)
-
-if (MIN_BOUND_BOX_SIZE <= input_image_width <= MAX_BOUND_BOX_SIZE) is False:
-    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+if input_image_width != "":
+    RE_INT = re.compile(r'^([1-9]\d*|0)$')
+    if re.match(RE_INT, input_image_width) is None:
+        app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+    input_image_width = int(input_image_width)
+    if (MIN_BOUND_BOX_SIZE <= input_image_width <= MAX_BOUND_BOX_SIZE) is False:
+        app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+    calc_image_width = input_image_width
 
 print("")
-input_image_height = input("Enter a height in pixels (%d-%d, [%s]): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE, DEFAULT_BOUND_BOX_HEIGHT))
+input_image_height = input("Enter a height in pixels (%d-%d): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
 
-if input_image_height == "":
-    input_image_height = str(DEFAULT_BOUND_BOX_HEIGHT)
+if input_image_height != "":
+    RE_INT = re.compile(r'^([1-9]\d*|0)$')
+    if re.match(RE_INT, input_image_height) is None:
+        app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+    input_image_height = int(input_image_height)
+    if (MIN_BOUND_BOX_SIZE <= input_image_height <= MAX_BOUND_BOX_SIZE) is False:
+        app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+    calc_image_height = input_image_height
 
-RE_INT = re.compile(r'^([1-9]\d*|0)$')
-if re.match(RE_INT, input_image_height) is None:
-    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
-
-input_image_height = int(input_image_height)
-
-if (MIN_BOUND_BOX_SIZE <= input_image_height <= MAX_BOUND_BOX_SIZE) is False:
-    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
-
+if calc_image_width is None and calc_image_height is None:
+    app_exit("", "Invalid dimensions. Only one side can be empty.")
 
 print("")
 input_image_quality = input("Enter a quality (10-95, [%s]): " % DEFAULT_IMAGE_QUALITY)
@@ -113,6 +112,8 @@ input_image_quality = int(input_image_quality)
 
 if (10 <= input_image_quality <= 95) is False:
     app_exit("", "Invalid range. Integer needs to be in the range of 10-95")
+
+calc_image_quality = input_image_quality
 
 input_convert_jpeg = None
 ALLOWED_CONVERT_JPEG_ANSWERS = ["y", "yes", "n", "no", ""]
@@ -131,12 +132,16 @@ input_convert_jpeg = True if input_convert_jpeg.lower() in ["y", "yes"] else Fal
 #region ==================== FUNCS
 
 def generate_new_file_name(file):
-    name = file.name + " (%dpx, %dpx, %dqty)" % (input_image_width, input_image_height, input_image_quality)
+    width  = "None" if calc_image_width is None else str(calc_image_width) + "px"
+    height = "None" if calc_image_height is None else str(calc_image_height) + "px"
+    name = file.name + " (%s, %s, %dqty)" % (width, height, calc_image_quality)
     path = file.get_parent_path().path + file.sep + name + "." + file.extension
     return name, path
 
 def generate_new_folder_name(folder):
-    name = folder.name + " (%dpx, %dpx, %dqty)" % (input_image_width, input_image_height, input_image_quality)
+    width  = "None" if calc_image_width is None else str(calc_image_width) + "px"
+    height = "None" if calc_image_height is None else str(calc_image_height) + "px"
+    name = folder.name + " (%s, %s, %dqty)" % (width, height, calc_image_quality)
     path = folder.get_parent_path().path + folder.sep + name
     return name, path
 
@@ -182,12 +187,26 @@ def resize_image(image_node, target_img_path):
     else:
         img = img.convert("RGB")
     
-    img.thumbnail((input_image_width, input_image_height), Image.Resampling.LANCZOS)
+    thumb_width  = calc_image_width if calc_image_width is not None else guess_image_side(img, None, thumb_height)
+    thumb_height = calc_image_height if calc_image_height is not None else guess_image_side(img, thumb_width, None)
+    
+    img.thumbnail((thumb_width, thumb_height), Image.Resampling.LANCZOS)
     
     pil_format = None
     if input_convert_jpeg:
         pil_format = "JPEG"
-    img.save(target_img_path, format=pil_format, quality=input_image_quality)
+    img.save(target_img_path, format=pil_format, quality=calc_image_quality)
+
+def guess_image_side(img, calc_width=None, calc_height=None):
+    size = 0
+    img_width, img_height = img.size
+    if calc_width:
+        scale_factor = calc_width / img_width
+        size = round(img_height * scale_factor)
+    elif calc_height:
+        scale_factor = calc_height / img_height
+        size = round(img_width * scale_factor)
+    return size
 
 #endregion
 
