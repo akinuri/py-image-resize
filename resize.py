@@ -61,26 +61,44 @@ if len(sys.argv) == 1:
 for arg in sys.argv[1:]:
     drop_inputs.append(Path(arg))
 
-DEFAULT_IMAGE_SIZE = 5000
-DEFAULT_IMAGE_QUALITY = 75
-MIN_IMAGE_SIZE = 768
-MAX_IMAGE_SIZE = 12800
+MIN_BOUND_BOX_SIZE       = 100
+MAX_BOUND_BOX_SIZE       = 16000
+DEFAULT_BOUND_BOX_WIDTH  = 2000
+DEFAULT_BOUND_BOX_HEIGHT = 2000
+DEFAULT_IMAGE_QUALITY    = 75
 
-print("Dimensions of the images will be limited to a specific area, a square.")
+print("Dimensions of the images will be limited to a specific area.")
+
 print("")
-input_image_size = input("Enter a size in pixels (%d-%d, [%s]): " % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE, DEFAULT_IMAGE_SIZE))
+input_image_width = input("Enter a width in pixels (%d-%d, [%s]): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE, DEFAULT_BOUND_BOX_WIDTH))
 
-if input_image_size == "":
-    input_image_size = str(DEFAULT_IMAGE_SIZE)
+if input_image_width == "":
+    input_image_width = str(DEFAULT_BOUND_BOX_WIDTH)
 
 RE_INT = re.compile(r'^([1-9]\d*|0)$')
-if re.match(RE_INT, input_image_size) is None:
-    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
+if re.match(RE_INT, input_image_width) is None:
+    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
 
-input_image_size = int(input_image_size)
+input_image_width = int(input_image_width)
 
-if (MIN_IMAGE_SIZE <= input_image_size <= MAX_IMAGE_SIZE) is False:
-    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_IMAGE_SIZE, MAX_IMAGE_SIZE))
+if (MIN_BOUND_BOX_SIZE <= input_image_width <= MAX_BOUND_BOX_SIZE) is False:
+    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+
+print("")
+input_image_height = input("Enter a height in pixels (%d-%d, [%s]): " % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE, DEFAULT_BOUND_BOX_HEIGHT))
+
+if input_image_height == "":
+    input_image_height = str(DEFAULT_BOUND_BOX_HEIGHT)
+
+RE_INT = re.compile(r'^([1-9]\d*|0)$')
+if re.match(RE_INT, input_image_height) is None:
+    app_exit("", "Invalid value. Enter an integer in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+
+input_image_height = int(input_image_height)
+
+if (MIN_BOUND_BOX_SIZE <= input_image_height <= MAX_BOUND_BOX_SIZE) is False:
+    app_exit("", "Invalid range. Integer needs to be in the range of %d-%d" % (MIN_BOUND_BOX_SIZE, MAX_BOUND_BOX_SIZE))
+
 
 print("")
 input_image_quality = input("Enter a quality (10-95, [%s]): " % DEFAULT_IMAGE_QUALITY)
@@ -113,12 +131,12 @@ input_convert_jpeg = True if input_convert_jpeg.lower() in ["y", "yes"] else Fal
 #region ==================== FUNCS
 
 def generate_new_file_name(file):
-    name = file.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
+    name = file.name + " (%dpx, %dpx, %dqty)" % (input_image_width, input_image_height, input_image_quality)
     path = file.get_parent_path().path + file.sep + name + "." + file.extension
     return name, path
 
 def generate_new_folder_name(folder):
-    name = folder.name + " (%dpx, %dqty)" % (input_image_size, input_image_quality)
+    name = folder.name + " (%dpx, %dpx, %dqty)" % (input_image_width, input_image_height, input_image_quality)
     path = folder.get_parent_path().path + folder.sep + name
     return name, path
 
@@ -164,7 +182,7 @@ def resize_image(image_node, target_img_path):
     else:
         img = img.convert("RGB")
     
-    img.thumbnail((input_image_size, input_image_size), Image.Resampling.LANCZOS)
+    img.thumbnail((input_image_width, input_image_height), Image.Resampling.LANCZOS)
     
     pil_format = None
     if input_convert_jpeg:
